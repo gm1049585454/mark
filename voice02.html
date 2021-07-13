@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+ 
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+        content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HTML5语音合成播放以及百度语音合成</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+</head>
+ 
+<body>
+    <h3>HTML5语音合成</h3>
+    <div>
+        <select id="langs"></select>
+    </div>
+    <div>
+        <textarea id="textarea"></textarea>
+    </div>
+    <div><button id="play">播放</button></div>
+    <h3>免费百度语音合成</h3>
+    <div>
+        <!-- https://tts.baidu.com/text2audio?tex=百度语音合成&cuid=baike&lan=ZH&ctp=1&pdt=301&vol=9&rate=32&per=6 -->
+        <p>lan:<input id="lan" type="text" value="zh" />(ZH/EN)</p>
+        <p>pdt:<input id="pdt" type="number" value="301" /></p>
+        <p>vol:<input id="vol" type="number" value="9" /></p>
+        <p>rate:<input id="rate" type="number" value="0" /></p>
+        <p>per:<input id="per" type="number" value="0" /></p>
+        <p>text:<textarea id="ttsBaiduText">百度语音合成</textarea></p>
+        <p><button id="ttsBaiduPlay">语音合成</button></p>
+    </div>
+</body>
+<script type="text/javascript">
+    // 检查浏览器支持
+    if ('speechSynthesis' in window) {
+        $(function () {
+            // 使用计时器异步获取语音包
+            var langsInterval = setInterval(() => {
+                // 设置语言
+                var langs = window.speechSynthesis.getVoices();
+                if (langs.length > 0) {
+                    clearInterval(langsInterval);
+                }
+                for (var index = 0; index < langs.length; index++) {
+                    var lang = langs[index];
+                    var option = $("<option>").val(lang.lang).text(lang.name + ' - ' + lang.lang);
+                    $("#langs").append(option);
+                }
+            }, 1000);
+        });
+ 
+        $("#play").on('click', function (e) {
+            var text = $("#textarea").val();
+            var msg = new SpeechSynthesisUtterance();
+            msg.text = text;
+            msg.lang = $("#langs").val();
+            window.speechSynthesis.speak(msg);
+        });
+    } else {
+        // Ah man, speech synthesis isn't supported.
+        alert("抱歉浏览器不支持语音合成朗读")
+    }
+ 
+    $('#ttsBaiduPlay').on('click', function (e) {
+        var ttsUrl = 'https://tts.baidu.com/text2audio?';
+        var ttsText = $('#ttsBaiduText').val();
+        // 处理参数
+        var urlParameter = [];
+        urlParameter.push('lan=' + $.trim($('#lan').val()));
+        urlParameter.push('pdt=' + $.trim($('#pdt').val()));
+        urlParameter.push('vol=' + $.trim($('#vol').val()));
+        urlParameter.push('per=' + $.trim($('#per').val()));
+        urlParameter.push('cuid=baike');
+        urlParameter.push('ctp=1');
+        urlParameter.push('tex=' + encodeURIComponent(ttsText));
+        var address = ttsUrl + urlParameter.join('&');
+ 
+        // 如果浏览器支持，可以设置autoplay，但是不能兼容所有浏览器
+        var audio = document.createElement('audio');
+        audio.autoplay = true;
+        audio.preload = true;
+        audio.controls = true;
+        audio.src = address;
+        audio.addEventListener('ended', function () {
+            // 设置则播放完后移除audio的dom对象
+            document.body.removeChild(audio);
+        }, false);
+        audio.addEventListener('error', function () {
+            document.body.removeChild(audio);
+            console.log('合成出错url：' + address + '\nAudio错误码：' + audio.error.code);
+        }, false);
+        audio.loop = false;
+        audio.volume = 1;
+        // 在body元素下apppend音频控件
+        document.body.append(audio);
+ 
+    });
+ 
+</script>
+ 
+</html>
